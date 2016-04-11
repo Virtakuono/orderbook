@@ -1,50 +1,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+
+#ifndef MAX_LINE_LEN
+#define MAX_LINE_LEN 50
+#endif
 
 #ifndef MAX_ID_LEN
-#define MAX_ID_LEN 50
+#define MAX_ID_LEN 15
 #endif
 
 struct order{
+  unsigned int tstamp;
   float price;
   unsigned int size;
   char type;
   char id[MAX_ID_LEN];
   struct order *next;
+  struct order *prev;
 };
-
-struct order * resizeOrder(char * id, unsigned int size){
-  struct order * rv = calloc(sizeof(struct order),1);
-  strcpy(id,rv->id);
-  rv->size = size;
-  return rv;
-};
-
-struct order * newOrder(float price, unsigned int size, char type, char * id){
-  struct order * rv = calloc(sizeof(struct order),1);
-  printf("moi");
-  strcpy(id,rv->id);
-  rv->size = size;
-  rv->type = type;
-  rv->price = price;
-  return rv;
-}
 
 struct book{
   struct order * asks;
   struct order * bids;
+  unsigned int clock;
+  unsigned int target;
+  float buyPrice;
+  float sellPrice;
 };
 
-int resizeSide(struct order * side,struct order * newOrder){
-  if(!side) return 0;
-  struct order * curr=side;
-  struct order * prev=0;
-  while((curr->next)){
-    if (!(strcmp(curr->id,newOrder->id))){
+struct order * newOrder(float price,unsigned int size,char type, char * id,unsigned int tstamp){
+  struct order * rv;
+  rv = (struct order *) malloc(sizeof(struct order));
+  rv->price = price;
+  rv->size = size;
+  rv->type = type;
+  rv->tstamp = tstamp;
+  rv->next = 0;
+  rv->prev = 0;
+  strcpy(rv->id,id);
+  return rv;
+}
+
+int printOrder(FILE *stream,struct order * p){
+  fprintf(stream,"-- *** --\nOrder %s\n",p->id);
+  fprintf(stream,"Time: %u\n",p->tstamp);
+  fprintf(stream,"Price %f, volume %u\n",p->price,p->size);
+  fprintf(stream,"Type %c\n",p->type);
+  fprintf(stream,"Previous %p, Next %p\n-- *** --\n",p->prev,p->next);
+  return 0;
+}
+
+struct order * getOrderFromStream(FILE * stream){
+  if(feof(stream)) return 0;
+  char line[MAX_LINE_LEN] = {'\0'};
+  fgets(line,MAX_LINE_LEN,stream);
+  fprintf(stdout,"line:\n%s-- +++ --\n",line);
+  char type,temp;
+  float price;
+  unsigned int size,tstamp;
+  char id[50] = {'\0'};
+  if(sscanf(line,"%u %c %s %c %f %u\n",&tstamp,&temp,id,&type,&price,&size)<6){
+    if(sscanf(line,"%u %c %s %u\n",&tstamp,&type,id,&size)<4) return 0;
+    return newOrder(0.0,size,type,id,tstamp);
+  }
+  return newOrder(price,size,type,id,tstamp);
+}
+
+int resizeSide(struct order ** side,struct order * newOrder){
+  fprintf(stdout,"In resize mode resizing order %s\n",newOrder->id);
+  struct order * curr = side[0];
+  if(!curr) return 1;
+  fprintf(stdout,"There is at least one order on this side of the book\n");
+  fprintf(stdout,"looking for a match to %s\n",newOrder->id);
+  fprintf(stdout,"comparing %s\n",curr->id);
+  if(!strcmp(curr->id,newOrder->id)){
+    fprintf(stdout,"Found a match!\n");
+    curr->size -= newOrder->size;
+    fprintf(stdout,"New size of %s is %u units.\n",curr->id,curr->size);
+    if(!(curr->size)){
+      fprintf(stdout,"Freeing %s.\n",curr->id);
+      side[0] = curr->next;
+      free(curr);
+    }
+    return 0;
+  }
+  fprintf(stdout,"%s did not match with %s\n",curr->id,newOrder->id);
+  struct order * prev = curr;
+  curr = curr->next;
+  while(curr){
+    fprintf(stdout,"New iteration, comparing to %s\n",curr->id);
+    if(!strcmp(curr->id,newOrder->id)){
+      fprintf(stdout,"Found a match!\n");
       curr->size -= newOrder->size;
+      fprintf(stdout,"New size of %s is %u units.\n",curr->id,curr->size);
       if(!(curr->size)){
-	prev->next=curr->next;
+	fprintf(stdout,"Freeing %s.\n",curr->id);
+	prev->next = curr->next;
 	free(curr);
       }
       return 0;
@@ -55,26 +108,125 @@ int resizeSide(struct order * side,struct order * newOrder){
   return 1;
 }
 
+unsigned int printSide(struct order ** side){
+  struct order * curr = side[0];
+  unsigned int count = 0;
+  if(!curr){
+    fprintf(stdout,"   No orders.\n");
+    return count;
+  }
+  while(curr){
+    fprintf(stdout,"   Price %.5f   size %05u  %08u   id %s\n",curr->price,curr->size,curr->tstamp,curr->id);
+    curr = curr->next;
+    count++;
+  }
+  return count;
+}
+
+int printBook(struct book * orderBook){
+  fprintf(stdout,"   --- *** ---\nPrinting the order book\n");
+  fprintf(stdout,"Time in the book: %u\n",orderBook->clock);
+  fprintf(stdout,"   Asks:\n");
+  printSide(&(orderBook->asks));
+  fprintf(stdout,"   Bids:\n");
+  printSide(&(orderBook->bids));
+  fprintf(stdout,"   --- *** ---\n");
+  return 0;
+}
+
+int compareTwoOffers(struct order * o1,struct order * o2){
+  // Compare two offers, o1 and o2
+  // Returns 1 if the first one is more competitive than the latter
+  // Returns -1 if the latter is more competitive
+  // Otherwise, returns 0
+  if ((o1->type) != (o2->type)) return 0;
+  int coef = ((o1->type)=='B')?1:-1;
+  if(coef*(o1->price)>coef*(o2->price)) return 1;
+  if(coef*(o1->price)<coef*(o2->price)) return -1;
+  if((o1->tstamp)<(o2->tstamp)) return 1;
+  if((o1->tstamp)>(o2->tstamp)) return -1;
+  return 0;
+}
+
+int checkOrderType(struct order * o){
+  if(o->type=='B') return 0;
+  if(o->type=='S') return 0;
+  return 1;
+}
+
+
+
+int checkSideOrdering(struct order ** side){
+  if(!(side[0])) return 0;
+  if(!((side[0])->next)) return 0;
+  fprintf(stdout,"bobobo\n");
+  for(struct order * i=side[0];i->next;i=i->next){
+    if(compareTwoOffers(i,i->next)<0){
+      fprintf(stdout,"%s more competitive than %s - FAIL\n",i->id,i->next->id);
+      return 1;
+    }
+    if(checkOrderType(i)){
+      fprintf(stdout,"%s has broken type",i->id);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int orderBookSanityCheck(struct book * orderBook){
+  fprintf(stdout,"goog\n");
+  if(checkSideOrdering(&(orderBook->bids))) return 1;
+  if(checkSideOrdering(&(orderBook->asks))) return 1;
+  return 0;
+}
+
+int priceSide(struct order * side,unsigned int target){
+  unsigned int total=0;
+  unsigned int inc;
+  float price=0.0;
+  while(side->next){
+    inc = ((target-total)>(side->size))?(side->size):(target-total);
+    price += inc*(side->price);
+    total += inc;
+    if(total>=target) return price;
+    side = side->next;
+  }
+  return 0.0;
+}
+
 int addNewOrder(struct book * orderBook, struct order * newOrder){
-  if(newOrder->type=='R')
-    return resizeSide(orderBook->asks,newOrder)?resizeSide(orderBook->bids,newOrder):1;
+  orderBook->clock = newOrder->tstamp;
+  if(newOrder->type=='R'){
+    resizeSide(&(orderBook->asks),newOrder);
+    resizeSide(&(orderBook->bids),newOrder);
+    free(newOrder);
+    fprintf(stdout,"Pointer to new order freed.\n");
+    return 0;
+  }
   struct order ** side = ((newOrder->type)=='S')?(&(orderBook->asks)):(&(orderBook->bids));
   struct order ** opposingSide = (!((newOrder->type)=='S'))?(&(orderBook->asks)):(&(orderBook->bids));
   int coef = ((newOrder->type)=='S')?-1:1;
   while(opposingSide[0] && (coef*((opposingSide[0])->price)<=coef*(newOrder->price))){
     // The new order can be at least partially filled
-    printf("moiggeli2\n");
+    fprintf(stdout,"There is open interest in the opposing side of the book. Matching.\n");
+    fprintf(stdout,"Order %s is favourable to match %s. Price is %f.\n",(opposingSide[0])->id,newOrder->id,(opposingSide[0])->price);
     unsigned int tradeSize;
     tradeSize = (newOrder->size < (opposingSide[0])->size)?(newOrder->size):(opposingSide[0]->size);
+    fprintf(stdout,"Matching offers %s and %s. Reducing both by %u units.\n",opposingSide[0]->id,newOrder->id,tradeSize);
+    printOrder(stdout,opposingSide[0]);
+    printOrder(stdout,newOrder);
     newOrder->size -= tradeSize;
-    opposingSide[0] -= tradeSize;
+    opposingSide[0]->size -= tradeSize;
+    printOrder(stdout,opposingSide[0]);
+    printOrder(stdout,newOrder);
     if(!((opposingSide[0])->size)){
+      fprintf(stdout,"Order %s filled.\n",(opposingSide[0])->id);
       newOrder->next = (opposingSide[0])->next;
-      opposingSide[0] = (opposingSide[0])->next;
-      free(newOrder->next);
-      newOrder->next = 0;
+      opposingSide[0] = newOrder->next;
+      newOrder->next=0;
     }
     if(!(newOrder->size)){
+      fprintf(stdout,"Order %s filled.\n",newOrder->id);
       // the order was filled and will be forgotten
       free(newOrder);
       return 0;
@@ -93,26 +245,59 @@ int addNewOrder(struct book * orderBook, struct order * newOrder){
   }
   // Find the best offer in the order book that is still
   // worse than the new order
-  struct order * bestWorse = side[0];
-  while ((bestWorse->next)&&(coef*(bestWorse->next->price)<coef*(newOrder->price)))
-    bestWorse = bestWorse->next;
-  newOrder->next = bestWorse->next;
-  bestWorse->next = newOrder;
-  return 0;
+  struct order * worstBetter = side[0];
+  fprintf(stdout,"Adding the non-filled part of the order into the order book.\n");
+  while(worstBetter){
+    if (!(worstBetter->next)){
+      worstBetter->next = newOrder;
+      return 0;
+    }
+    if(coef*(worstBetter->next->price)<coef*(newOrder->price)){
+      newOrder->next = worstBetter->next;
+      worstBetter->next = newOrder;
+      return 0;
+    }
+    worstBetter = worstBetter->next;
+  }
+  return 1;
 }
 
-int main(){
-  printf("moimoi2\n");
+int main(int argc, char * argv[]){
+  if(argc<2){
+    fprintf(stdout,"Usage %s target [inputfile]\n",argv[0]);
+    return EXIT_SUCCESS;
+  }
+  unsigned int target = 99;
+  target++;
+  FILE * output;
+  output = stdout;
+  FILE * input = stdin;
+  if(argc==3){
+    input = fopen(argv[2],"r");
+  }
   struct book theBook;
   theBook.asks = 0;
   theBook.bids = 0;
-  printf("moimoi1\n");
-  struct order p;
-  strcpy(p.id,"moimoi");
-  p.price = 19.3;
-  p.size = 4;
-  p.type = 'B';
-  addNewOrder(&theBook,&p);
+  struct order *q;
+  unsigned int lineNum = 0;
+  q = (struct order *) 1;
+  while(!(feof(input))){
+    q = getOrderFromStream(input);
+    if(q){
+      lineNum++;
+      addNewOrder(&theBook,q);
+      printBook(&theBook);
+      //fprintf(stdout,"geig\n");
+      if(orderBookSanityCheck(&theBook)){
+	return 1;
+      }
+      //printOrder(stdout,q);
+      //free(q);
+    }
+  }
+  if(argc==3){
+    fclose(input);
+  }
   return EXIT_SUCCESS;
 }
 
