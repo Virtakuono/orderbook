@@ -37,9 +37,6 @@ int updatePrices(struct book *b){
   float sellc = 0.0;
   struct order * curr = b->bids;
   unsigned int count = 0;
-  if(!curr){
-    return count;
-  }
   //fprintf(stdout,"Recomputing target prices that are %.2f and %.2f\n",b->buyPrice,b->sellPrice);
   //fprintf(stdout,"Going through bids\n");
   while(curr){
@@ -65,10 +62,8 @@ int updatePrices(struct book *b){
     b->sellPrice = sellc;
   }
   curr = b->asks;
+  //fprintf(stdout,"Going through asks\n");
   volume = 0.0;
-  if(!curr){
-    return count;
-  }
   while(curr){
     if(volume<(b->target)){
       //fprintf(stdout,"Volume not filled yet\n");
