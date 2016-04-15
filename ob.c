@@ -86,12 +86,6 @@ int printOrder(FILE *stream,struct order * p){
 }
 
 int freeOrder(struct order * o){
-  if(o->type=='R'){
-    //fprintf(stdout,"Mem - free - %s-%c %08u %p\n",o->id,o->type,o->tstamp,o);
-  }
-  else{
-    //fprintf(stdout,"Mem - free - %s %08u %p\n",o->id,o->tstamp,o);
-  }
   free(o);
   return 0;
 }
