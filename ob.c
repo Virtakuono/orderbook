@@ -22,8 +22,7 @@
 struct order{
   unsigned int tstamp,size;
   float price;
-  char type;
-  char id[MAX_ID_LEN];
+  char type, id[MAX_ID_LEN];
   struct order *next, *prev;
 };
 
@@ -34,8 +33,7 @@ struct book{
 };
 
 int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
-  unsigned int volume=0;
-  unsigned int ivol;
+  unsigned int volume=0,ivol;
   float ep = 0.0;
   struct order * curr = side[0];
   unsigned int count =0;
