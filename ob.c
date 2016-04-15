@@ -91,8 +91,7 @@ int freeOrder(struct order * o){
 }
 
 unsigned int freeBook(struct book * b){
-  struct order * curr = b->bids;
-  struct order * temp;
+  struct order *curr = b->bids, *temp;
   unsigned int count = 0;
   if(!curr){
     return count;
