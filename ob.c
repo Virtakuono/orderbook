@@ -28,7 +28,7 @@ struct order{
 
 struct book{
   struct order *asks, *bids;
-  unsigned int clock,oldclock,target,nTrades;
+  unsigned int clock,target,nTrades;
   float buyPrice,sellPrice;
 };
 
@@ -234,7 +234,6 @@ int priceSide(struct order * side,unsigned int target){
 }
 
 int addNewOrder(struct book * orderBook, struct order * newOrder){
-  orderBook->oldclock = orderBook->clock;
   orderBook->clock = newOrder->tstamp;
   if(newOrder->type=='R'){
     resizeSide(&(orderBook->asks),newOrder);
