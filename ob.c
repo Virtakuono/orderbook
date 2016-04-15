@@ -64,7 +64,7 @@ int updatePrices(struct book *b){
 }
 
 struct order * newOrder(float price,unsigned int size,char type, char * id,unsigned int tstamp){
-  struct order * rv;
+  struct order *rv;
   rv = (struct order *) malloc(sizeof(struct order));
   rv->price = price;
   rv->size = size;
@@ -73,13 +73,6 @@ struct order * newOrder(float price,unsigned int size,char type, char * id,unsig
   rv->next = 0;
   rv->prev = 0;
   strcpy(rv->id,id);
-  struct order * o = rv;
-  if(o->type=='R'){
-    //fprintf(stdout,"Mem - alloc - %s-%c %08u %p\n",o->id,o->type,o->tstamp,o);
-  }
-  else{
-    //fprintf(stdout,"Mem - alloc - %s %08u %p\n",o->id,o->tstamp,o);
-  }
   return rv;
 }
 
