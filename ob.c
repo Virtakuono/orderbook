@@ -33,10 +33,9 @@ struct book{
 };
 
 int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
-  unsigned int volume=0,ivol;
+  unsigned int volume=0,ivol,count=0;
   float ep = 0.0;
-  struct order * curr = side[0];
-  unsigned int count =0;
+  struct order *curr = side[0];
   while(curr){
     if(volume<target[0]){
       ivol = MIN_ARG(target[0]-volume,curr->size);
