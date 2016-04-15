@@ -57,10 +57,11 @@ def runOrderBook(lines):
         if order['type'] == 'S':
             asks[order['id']] = order
             bestAsk = min(order['price'],bestAsk)
-        bestBid = max([bids[key]['price'] for foo in bids.keys()])
-        bestAsk = min([asks[key]['price'] for foo in asks.keys()])
+        bestBid = max([bids[key]['price'] for key in bids.keys()])
+        bestAsk = min([asks[key]['price'] for key in asks.keys()])
         while bestBid >= bestAsk:
-            allAsks = 
+            allBids = [bids[key] for key in bids.keys()]
+            allAsks = [asks[key] for key in asks.keys()]
 
     
 
