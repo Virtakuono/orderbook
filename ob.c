@@ -20,9 +20,8 @@
 #endif
 
 struct order{
-  unsigned int tstamp;
+  unsigned int tstamp,size;
   float price;
-  unsigned int size;
   char type;
   char id[MAX_ID_LEN];
   struct order *next;
