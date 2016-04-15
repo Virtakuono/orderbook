@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import copy
+
 def getLines(fn='pricer.in.txt',startTime=0,endTime=10**20):
     f = open(fn,'r')
     rv = f.readlines()
@@ -74,7 +76,7 @@ def runOrderBook(lines):
             theBestAsk = False
             for iter in ((bestBids,theBestBid,firstBid),(bestAsks,theBestAsk,firstAsk)):
                 for offer in iter[0]:
-                    if offer['tstamp'] = iter[-1]:
+                    if offer['tstamp'] == iter[-1]:
                         iter[1] = offer
             tradeSize = min(theBestBid['vol'],theBestAsk['vol'])
             for iter in ((theBestBid,bids),(theBestAsk,asks)):
@@ -84,7 +86,27 @@ def runOrderBook(lines):
             bestBid = max([bids[key]['price'] for key in bids.keys()])
             bestAsk = min([asks[key]['price'] for key in asks.keys()])
     return (bids,asks)
-    
+
+def printOrderBook(bidsasks):
+    bids = copy.deepcopy(bidsasks[0])
+    asks = copy.deepcopy(bidsasks[1])
+    for side in (('Bids',bids,1),('Asks',asks,-1)):
+        print('Printing %s',side[0])
+        bestPrice = side[2]*max([side[2]*side[1][key]['price'] for key in side[1].keys()])
+        while len(side[1].keys()):
+            allSide = [side[1][key] for key in side[1].keys()]
+            bestPrice = side[2]*max([side[2]*side[1][key]['price'] for key in side[1].keys()])
+            bestOffers = []
+            for offer in allSide:
+                if offer['price'] = bestPrice
+                        bestOffers.append(offer)
+            firstOffer = min(bestOffers[key]['tstamp'] for key in bestOffers.keys())
+            theBestOffer = False
+            for offer in [bestOffers[key] for key in bestOffers.keys()]:
+                if offer['tstamp'] == firstOffer:
+                        theBestOffer = offer
+            print('%08d - %.2f - %05d - %s'%(theBestOffer['tstamp'],theBestOffer['price'],theBestOffer['vol'],theBestOffer['id']))
+            side.pop(theBestOffer['id'])
 
 def allOrders(startTime=0,endTime=10**20):
     return [lineToOrder(foo) for foo in getLines(startTime=startTime, endTime=endTime)]
