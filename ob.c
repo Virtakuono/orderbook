@@ -37,61 +37,37 @@ struct book{
   float sellPrice;
 };
 
-int updatePrices(struct book *b){
+int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
   unsigned int volume=0;
   unsigned int ivol;
-  float buyc = 0.0;
-  float sellc = 0.0;
-  struct order * curr = b->bids;
-  unsigned int count = 0;
-  //fprintf(stdout,"Recomputing target prices that are %.2f and %.2f\n",b->buyPrice,b->sellPrice);
-  //fprintf(stdout,"Going through bids\n");
+  float ep = 0.0;
+  struct order * curr = side[0];
+  unsigned int count =0;
   while(curr){
-    if(volume<(b->target)){
-      //fprintf(stdout,"Volume not filled yet\n");
-      ivol = MIN_ARG((b->target)-volume,curr->size);
-      //ivol = ((b->target-volume)>(curr->size))?(curr->size):(b->target-volume);
-      //fprintf(stdout,"Adding volume of %u\n",ivol);
+    if(volume<target[0]){
+      ivol = MIN_ARG(target[0]-volume,curr->size);
       volume += ivol;
-      sellc += ivol*(curr->price);
+      ep += ivol*(curr->price);
     }
     curr = curr->next;
     count++;
   }
-  //fprintf(stdout,"%u bids checked, volume %u price %.2f old price %.2f target %u\n",count,volume,sellc,b->buyPrice,b->target);
-  //fprintf(stdout,"Accumulated sell volume of %u\n",volume);
-  if(volume<b->target){
-    //fprintf(stdout,"Volume not filled!\n");
+  if(volume<target[0]){
     volume = 0.0;
-    sellc = 0.0;
+    ep = 0.0;
   }
-  if(sellc!=(b->sellPrice)){
-    (sellc!=0)?fprintf(stdout,"%u S %.2f\n",b->clock,sellc):fprintf(stdout,"%u S NA\n",b->clock);
-    b->sellPrice = sellc;
-  }
-  curr = b->asks;
-  //fprintf(stdout,"Going through asks\n");
-  volume = 0.0;
-  while(curr){
-    if(volume<(b->target)){
-      //fprintf(stdout,"Volume not filled yet\n");
-      ivol = ((b->target-volume)>(curr->size))?(curr->size):(b->target-volume);
-      buyc += ivol*(curr->price);
-      //fprintf(stdout,"Adding volume of %u\n",ivol);
-      volume += ivol;
-    }
-    curr = curr->next;
-    count++;
-  }
-  if(volume<b->target){
-    volume = 0.0;
-    buyc = 0.0;
-  }
-  if(buyc!=(b->buyPrice)){
-    (buyc!=0)?fprintf(stdout,"%u B %.2f\n",b->clock,buyc):fprintf(stdout,"%u B NA\n",b->clock);
-    b->buyPrice = buyc;
+  if(ep!=old[0]){
+    (ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+    old[0] = ep;
   }
   return count;
+}
+
+int updatePrices(struct book *b){
+  int rv =0;
+  rv += updatePricesSide(&(b->bids),&(b->sellPrice),&(b->target),&(b->clock),'S');
+  rv += updatePricesSide(&(b->asks),&(b->buyPrice),&(b->target),&(b->clock),'B');
+  return rv;
 }
 
 struct order * newOrder(float price,unsigned int size,char type, char * id,unsigned int tstamp){
