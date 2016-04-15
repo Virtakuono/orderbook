@@ -32,8 +32,7 @@ struct book{
   struct order * asks;
   struct order * bids;
   unsigned int clock,oldclock,target,nTrades;
-  float buyPrice;
-  float sellPrice;
+  float buyPrice,sellPrice;
 };
 
 int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
