@@ -106,7 +106,7 @@ unsigned int freeSide(struct order **side){
 }
 
 unsigned int freeBook(struct book * b){
-  return freeSide(&(b->bids))+freeSide(&(b->asks))
+  return freeSide(&(b->bids))+freeSide(&(b->asks));
 }
 
 struct order * getOrderFromStream(FILE * stream){
@@ -343,9 +343,8 @@ int main(int argc, char * argv[]){
     fprintf(stdout,"Usage %s target [inputfile]\n",argv[0]);
     return EXIT_SUCCESS;
   }
-  FILE * output = stdout;
+  FILE *output=stdout, *input=stdin;
   (void) output;
-  FILE * input = stdin;
   if(argc==3){
     input = fopen(argv[2],"r");
   }
@@ -358,24 +357,22 @@ int main(int argc, char * argv[]){
     fprintf(stdout,"Usage %s target [inputfile]\n",argv[0]);
     return EXIT_SUCCESS;
   }
-  struct order *q;
-  (void) q;
-  unsigned int lineNum = 0;
-  q = (struct order *) 1;
+  struct order *q=(struct order *)1;
   while(!(feof(input))){
     q = getOrderFromStream(input);
     if(q){
-      lineNum++;
       addNewOrder(&theBook,q);
       //fprintf(stdout,"order added %u\n",theBook.clock);
       updatePrices(&theBook);
       //fprintf(stdout,"prices updated %u\n",theBook.clock);
+      /*
       if(orderBookSanityCheck(&theBook)){
 	fprintf(stdout,"Broken order book!!!\n");
 	printBook(&theBook);
 	freeBook(&theBook);
 	return 1;
       }
+      */
       //printBook(&theBook);
       //printOrder(stdout,q);
     }
