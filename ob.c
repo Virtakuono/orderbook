@@ -395,8 +395,6 @@ int main(int argc, char * argv[]){
       //fprintf(stdout,"order added %u\n",theBook.clock);
       updatePrices(&theBook);
       //fprintf(stdout,"prices updated %u\n",theBook.clock);
-      if(theBook.clock==31849106)
-	printBook(&theBook);
       if(orderBookSanityCheck(&theBook)){
 	fprintf(stdout,"Broken order book!!!\n");
 	printBook(&theBook);
