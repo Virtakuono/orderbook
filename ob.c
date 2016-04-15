@@ -24,13 +24,11 @@ struct order{
   float price;
   char type;
   char id[MAX_ID_LEN];
-  struct order *next;
-  struct order *prev;
+  struct order *next, *prev;
 };
 
 struct book{
-  struct order * asks;
-  struct order * bids;
+  struct order *asks, *bids;
   unsigned int clock,oldclock,target,nTrades;
   float buyPrice,sellPrice;
 };
