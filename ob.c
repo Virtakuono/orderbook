@@ -76,6 +76,15 @@ struct order * newOrder(float price,unsigned int size,char type, char * id,unsig
   return rv;
 }
 
+int printOrder(FILE *stream,struct order * p){
+  fprintf(stream,"-- *** --\nOrder %s\n",p->id);
+  fprintf(stream,"Time: %u\n",p->tstamp);
+  fprintf(stream,"Price %f, volume %u\n",p->price,p->size);
+  fprintf(stream,"Type %c\n",p->type);
+  fprintf(stream,"Previous %p, Next %p\n-- *** --\n",p->prev,p->next);
+  return 0;
+}
+
 int freeOrder(struct order * o){
   free(o);
   return 0;
