@@ -90,8 +90,8 @@ int freeOrder(struct order * o){
   return 0;
 }
 
-unsigned int freeBook(struct book * b){
-  struct order *curr = b->bids, *temp;
+unsigned int freeSide(struct order **side){
+  struct order *curr = side[0], *temp;
   unsigned int count = 0;
   if(!curr){
     return count;
@@ -102,17 +102,11 @@ unsigned int freeBook(struct book * b){
     curr = curr->next;
     count++;
   }
-  curr = b->asks;
-  if(!curr){
-    return count;
-  }
-  while(curr){
-    temp = curr;
-    freeOrder(temp);
-    curr = curr->next;
-    count++;
-  }
   return count;
+}
+
+unsigned int freeBook(struct book * b){
+  return freeSide(&(b->bids))+freeSide(&(b->asks))
 }
 
 struct order * getOrderFromStream(FILE * stream){
