@@ -380,8 +380,8 @@ int main(int argc, char * argv[]){
   theBook.nTrades = 0;
   if(!(sscanf(argv[1],"%u",&(theBook.target)))){
     fclose(input);
-    fprintf(stdout,"Unable to determine target.\n");
-    return 10;
+    fprintf(stdout,"Usage %s target [inputfile]\n",argv[0]);
+    return EXIT_SUCCESS;
   }
   struct order *q;
   (void) q;
