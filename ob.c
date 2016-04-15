@@ -19,6 +19,10 @@
 #define MAX_ID_LEN 10
 #endif
 
+#ifndef DEBUGSTOP
+#define DEBUGSTOP (28845606+5+100000)
+#endif
+
 struct order{
   unsigned int tstamp,size;
   float price;
@@ -50,7 +54,7 @@ int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsig
     ep = 0.0;
   }
   if(ep!=old[0]){
-    (ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+    //(ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
     old[0] = ep;
   }
   return count;
@@ -115,7 +119,7 @@ struct order * getOrderFromStream(FILE * stream){
   line = (char *) calloc(MAX_LINE_LEN,sizeof(char));
   id = (char *) calloc(MAX_ID_LEN,sizeof(char));
   fgets(line,MAX_LINE_LEN,stream);
-  //fprintf(stdout,"line:\n%s-- +++ --\n",line);
+  fprintf(stdout,"line: %s ",line);
   char type=0,temp=0;
   float price=0.0;
   unsigned int size=0,tstamp=0;
@@ -162,11 +166,10 @@ unsigned int printSide(struct order ** side){
   struct order * curr = side[0];
   unsigned int count = 0;
   if(!curr){
-    fprintf(stdout,"   No orders.\n");
     return count;
   }
   while(curr){
-    fprintf(stdout,"   Price %.5f   size %05u  %08u   id %s\n",curr->price,curr->size,curr->tstamp,curr->id);
+    fprintf(stdout,"  %u %u %.2f %s\n",curr->tstamp,curr->size,curr->price,curr->id);
     curr = curr->next;
     count++;
   }
@@ -191,6 +194,15 @@ int checkOrderType(struct order * o){
   if(o->type=='B') return 0;
   if(o->type=='S') return 0;
   return 1;
+}
+
+int printBook(struct book * b){
+  fprintf(stdout,"OrderBook time %u\n Printing order book\n",b->clock);
+  fprintf(stdout,"  Printing all bids.\n");
+  printSide(&(b->bids));
+  fprintf(stdout,"  Printing all asks.\n");
+  printSide(&(b->asks));
+  return 0;
 }
 
 int checkRidiculousOrderSizes(struct order ** side){
@@ -312,6 +324,11 @@ int main(int argc, char * argv[]){
     if(q){
       addNewOrder(&theBook,q);
       updatePrices(&theBook);
+      printBook(&theBook);
+      if(theBook.clock>=DEBUGSTOP){
+	freeBook(&theBook);
+	return EXIT_SUCCESS;
+      }
     }
   }
   if(argc==3){
