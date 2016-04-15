@@ -102,17 +102,23 @@ unsigned int freeBook(struct book * b){
 
 struct order * getOrderFromStream(FILE * stream){
   if(feof(stream)) return 0;
-  char line[MAX_LINE_LEN] = {'\0'}, id[MAX_ID_LEN] = {'\0'};
+  char *line, *id;
+  line = (char *) calloc(MAX_LINE_LEN,sizeof(char));
+  id = (char *) calloc(MAX_ID_LEN,sizeof(char));
   fgets(line,MAX_LINE_LEN,stream);
   //fprintf(stdout,"line:\n%s-- +++ --\n",line);
   char type=0,temp=0;
   float price=0.0;
   unsigned int size=0,tstamp=0;
+  struct order *o;
   if(sscanf(line,"%u %c %s %c %f %u",&tstamp,&temp,id,&type,&price,&size)<6){
     if(sscanf(line,"%u %c %s %u",&tstamp,&type,id,&size)<4) return 0;
-    return newOrder(0.0,size,type,id,tstamp);
+    o = newOrder(0.0,size,type,id,tstamp);
   }
-  return newOrder(price,size,type,id,tstamp);
+  o = newOrder(price,size,type,id,tstamp);
+  free(line);
+  free(id);
+  return o;
 }
 
 int resizeSide(struct order ** side,struct order * newOrder){
