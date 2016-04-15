@@ -62,7 +62,28 @@ def runOrderBook(lines):
         while bestBid >= bestAsk:
             allBids = [bids[key] for key in bids.keys()]
             allAsks = [asks[key] for key in asks.keys()]
-
+            bestBids = []
+            bestAsks = []
+            for iter in ((allBids,bestBids,bestBid),(allAsks,bestAsks,bestAsk)):
+                for offer in iter[0]:
+                    if offer['price'] == iter[-1]:
+                        iter[1].append(offer)
+            firstBid = min([bestBids[key]['tstamp'] for key in bestBids.keys()])
+            firstAsk = min([bestAsks[key]['tstamp'] for key in bestAsks.keys()])
+            theBestBid = False
+            theBestAsk = False
+            for iter in ((bestBids,theBestBid,firstBid),(bestAsks,theBestAsk,firstAsk)):
+                for offer in iter[0]:
+                    if offer['tstamp'] = iter[-1]:
+                        iter[1] = offer
+            tradeSize = min(theBestBid['vol'],theBestAsk['vol'])
+            for iter in ((theBestBid,bids),(theBestAsk,asks)):
+                iter[0]['vol'] = max(iter[0]['vol']-tradeSize,0)
+                if iter[0]['vol'] == 0:
+                    iter[1].pop(iter[0]['id'])
+            bestBid = max([bids[key]['price'] for key in bids.keys()])
+            bestAsk = min([asks[key]['price'] for key in asks.keys()])
+    return (bids,asks)
     
 
 def allOrders(startTime=0,endTime=10**20):
