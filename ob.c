@@ -51,10 +51,10 @@ struct order{
 struct book{
   struct order *asks, *bids;
   unsigned int clock,target,nTrades;
-  float buyPrice,sellPrice;
+  int buyPrice,sellPrice;
 };
 
-int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
+int updatePricesSide(struct order ** side,int *old,unsigned int * target,unsigned int * tstamp,char c){
   unsigned int volume=0,ivol=0,count=0;
   int ep = 0;
   struct order *curr = side[0];
@@ -68,11 +68,11 @@ int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsig
     count++;
   }
   if(volume<target[0]){
-    volume = 0.0;
-    ep = 0.0;
+    volume = 0;
+    ep = 0;
   }
-  if(sameFloats(ep,old[0])){
-    (sameFloats(ep,0.0))?fprintf(stdout,"%u %c %d.%02d\n",tstamp[0],c,ep/100,ep%100):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+  if(ep!=old[0]){
+    (ep)?fprintf(stdout,"%u %c %d.%02d\n",tstamp[0],c,ep/100,ep%100):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
     old[0] = ep;
   }
   return count;
