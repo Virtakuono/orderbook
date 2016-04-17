@@ -256,10 +256,9 @@ int addNewOrder(struct book * orderBook, struct order * newOrder){
     return 0;
   }
   struct order ** side = ((newOrder->type)=='S')?(&(orderBook->asks)):(&(orderBook->bids));
-  int coef = ((newOrder->type)=='S')?-1:1;
   if(ORDER_MATCHING){
     struct order ** opposingSide = (!((newOrder->type)=='S'))?(&(orderBook->asks)):(&(orderBook->bids));
-    while(opposingSide[0] && (coef*((opposingSide[0])->price)<=coef*(newOrder->price))){
+    while(opposingSide[0] && (compareTwoOrders(opposingSide[0],newOrder)<=0)){
       unsigned int tradeSize =0 ;
       tradeSize = MIN_ARG((newOrder->size),((opposingSide[0])->size));
       orderBook->nTrades += tradeSize;
