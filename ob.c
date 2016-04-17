@@ -35,6 +35,11 @@
 #define DEBUGSTART (31552032)
 #endif
 
+int sameFloats(float f1,float f2){
+  if((f1-f2)>0.001) return 1;
+  if((f2-f1)>0.001) return 1;
+  return 0;
+}
 
 struct order{
   unsigned int tstamp,size;
