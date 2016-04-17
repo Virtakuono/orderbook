@@ -19,8 +19,12 @@
 #define MAX_ID_LEN 8
 #endif
 
+#ifndef ORDER_MATCHING
+#define ORDER_MATCHING 0
+#endif
+
 #ifndef DEBUGSTOP
-#define DEBUGSTOP (31854157+100)
+#define DEBUGSTOP (31552032+2)
 #endif
 
 #ifndef PRINTIN
@@ -28,7 +32,7 @@
 #endif
 
 #ifndef DEBUGSTART
-#define DEBUGSTART 31848955
+#define DEBUGSTART (31552032)
 #endif
 
 
@@ -265,25 +269,26 @@ int addNewOrder(struct book * orderBook, struct order * newOrder){
     return 0;
   }
   struct order ** side = ((newOrder->type)=='S')?(&(orderBook->asks)):(&(orderBook->bids));
-  struct order ** opposingSide = (!((newOrder->type)=='S'))?(&(orderBook->asks)):(&(orderBook->bids));
   int coef = ((newOrder->type)=='S')?-1:1;
-  while(opposingSide[0] && (coef*((opposingSide[0])->price)<=coef*(newOrder->price))){
-    unsigned int tradeSize =0 ;
-    tradeSize = MIN_ARG((newOrder->size),((opposingSide[0])->size));
-    orderBook->nTrades += tradeSize;
-    newOrder->size -= tradeSize;
-    opposingSide[0]->size -= tradeSize;
-    if(!((opposingSide[0])->size)){
-      newOrder->next = (opposingSide[0])->next;
-      opposingSide[0] = newOrder->next;
-      newOrder->next=0;
-    }
-    if(!(newOrder->size)){
-      freeOrder(newOrder);
-      return 0;
+  if(ORDER_MATCHING){
+    struct order ** opposingSide = (!((newOrder->type)=='S'))?(&(orderBook->asks)):(&(orderBook->bids));
+    while(opposingSide[0] && (coef*((opposingSide[0])->price)<=coef*(newOrder->price))){
+      unsigned int tradeSize =0 ;
+      tradeSize = MIN_ARG((newOrder->size),((opposingSide[0])->size));
+      orderBook->nTrades += tradeSize;
+      newOrder->size -= tradeSize;
+      opposingSide[0]->size -= tradeSize;
+      if(!((opposingSide[0])->size)){
+	newOrder->next = (opposingSide[0])->next;
+	opposingSide[0] = newOrder->next;
+	newOrder->next=0;
+      }
+      if(!(newOrder->size)){
+	freeOrder(newOrder);
+	return 0;
+      }
     }
   }
-  // The new order was not filled
   if(!(side[0])){
     side[0] = newOrder;
     newOrder->next=0;

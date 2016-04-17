@@ -13,7 +13,10 @@ for size in sizes:
     os.system('./ob %d pricer.in.txt > own.%d.out.txt'%(size,size))
     t2 = time.time()
     print('Pricer run for target size %d in %d seconds.'%(size,t2-t1))
-    os.system('diff pricer.out.%d.txt own.%d.out.txt > diff.%d.txt'%(size,size,size))
+    f1 = 'pricer.out.%d.txt'%(size,)
+    f2 = 'own.%d.out.txt'%(size,)
+    f3 = 'diff.%d.txt'%(size,)
+    os.system('diff %s %s > %s'%(size,size,size))
     diffFile = open('diff.%d.txt'%(size),'r')
     diffLines = diffFile.readlines()
     diffFile.close()
@@ -26,7 +29,7 @@ for size in sizes:
             if len(errorLog)<200:
                 if key not in errorLog:
                     errorLog.append(int(key))
-    print('First erroneous time steps')
+    print('First erroneous time steps (discrepancies between %s and %s )'%(f1,f2))
     for foo in errorLog[:5]:
         print('Outputs differ for timestamp %d.'%(foo,))
     print('Doing post-processing')

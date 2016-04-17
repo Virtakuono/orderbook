@@ -2,8 +2,9 @@
 
 import copy
 
-debugStop = 28845606+5+25000000
-debugStart = 28845606+5+15000000
+debugStop = 31552033+1
+debugStart = 31552033-1
+target = 200
 
 def getLines(fn='pricer.in.txt',startTime=0,endTime=10**20):
     f = open(fn,'r')
@@ -87,6 +88,9 @@ def runOrderBook(lines):
             #print('sell')
             asks[order['id']] = order
             bestAsk = min(order['price'],bestAsk)
+        if clock>=debugStart:
+            printOrderBook((bids,asks))
+        '''
         if (len(bids.keys()) + len(asks.keys())):
             while bestBid >= bestAsk:
                 #print('oogaooga')
@@ -119,6 +123,7 @@ def runOrderBook(lines):
             if (clock > debugStart):
                 print(' OrderBook time %d'%(clock,))
             printOrderBook((bids,asks))
+        '''
     return (bids,asks)
 
 def printOrderBook(bidsasks):
@@ -163,5 +168,5 @@ def getNonCancelledOrders(startTime=0,endTime=10**20):
     return rv
 
 lines = getLines(endTime=debugStop )
-runOrderBook(lines)
+printOrderBook(runOrderBook(lines))
 
