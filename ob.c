@@ -16,12 +16,21 @@
 #endif
 
 #ifndef MAX_ID_LEN
-#define MAX_ID_LEN 10
+#define MAX_ID_LEN 8
 #endif
 
 #ifndef DEBUGSTOP
-#define DEBUGSTOP (28845606+5+100000)
+#define DEBUGSTOP (31854157+100)
 #endif
+
+#ifndef PRINTIN
+#define PRINTIN 1
+#endif
+
+#ifndef DEBUGSTART
+#define DEBUGSTART 31848955
+#endif
+
 
 struct order{
   unsigned int tstamp,size;
@@ -54,7 +63,7 @@ int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsig
     ep = 0.0;
   }
   if(ep!=old[0]){
-    //(ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+    (ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
     old[0] = ep;
   }
   return count;
@@ -119,7 +128,9 @@ struct order * getOrderFromStream(FILE * stream){
   line = (char *) calloc(MAX_LINE_LEN,sizeof(char));
   id = (char *) calloc(MAX_ID_LEN,sizeof(char));
   fgets(line,MAX_LINE_LEN,stream);
-  fprintf(stdout,"line: %s ",line);
+  if(PRINTIN){
+    fprintf(stdout,"line: %s ",line);
+  }
   char type=0,temp=0;
   float price=0.0;
   unsigned int size=0,tstamp=0;
@@ -324,7 +335,8 @@ int main(int argc, char * argv[]){
     if(q){
       addNewOrder(&theBook,q);
       updatePrices(&theBook);
-      printBook(&theBook);
+      if(theBook.clock>=DEBUGSTART) 
+	printBook(&theBook);
       if(theBook.clock>=DEBUGSTOP){
 	freeBook(&theBook);
 	return EXIT_SUCCESS;

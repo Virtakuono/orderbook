@@ -2,7 +2,8 @@
 
 import copy
 
-debugStop = 28845606+5+100000
+debugStop = 28845606+5+25000000
+debugStart = 28845606+5+15000000
 
 def getLines(fn='pricer.in.txt',startTime=0,endTime=10**20):
     f = open(fn,'r')
@@ -39,16 +40,18 @@ def lineToOrder(line):
     return rv
 
 def listBids(offers):
-    bestPrice = max(offer['price'])
-    keyl = lambda offer: '%08d%s%s'%(int(1000*abs(offer['price']-bestPrice)),len(offer['id']),offer['id'])
-    return sorted(offers,key=keyl)
+    if offers:
+        bestPrice = max([offer['price'] for offer in offers])
+        keyl = lambda offer: '%08d%08d%s%s'%(int(1000*abs(offer['price']-bestPrice)),offer['ind'],len(offer['id']),offer['id'])
+        return sorted(offers,key=keyl)
+    return []
 
 def listAsks(offers):
-    bestPrice =min(offer['price'])
-    keyl = lambda offer: '%08d%s%s'%(int(1000*abs(offer['price']-bestPrice)),len(offer['id']),offer['id'])
-    return sorted(offers,key=keyl)
-
-def listOffers(offers)
+    if offers:
+        bestPrice =min([offer['price'] for offer in offers])
+        keyl = lambda offer: '%08d%08d%s%s'%(int(1000*abs(offer['price']-bestPrice)),offer['ind'],len(offer['id']),offer['id'])
+        return sorted(offers,key=keyl)
+    return []
 
 def runOrderBook(lines):
     orders = [lineToOrder(line) for line in lines]
@@ -57,13 +60,17 @@ def runOrderBook(lines):
     bestBid = 0.0
     bestAsk = 9999999.9
     clock = 0
+    count=0
     for order in orders:
+        order['ind'] = count
+        count += 1
         try:
             print('line: %d A %s %s %.2f %d'%(order['tstamp'],order['id'],order['type'],order['price'],order['vol']))
         except KeyError:
             print('line: %d %s %s %d'%(order['tstamp'],order['type'],order['id'],order['vol']))
         clock = max(order['tstamp'],clock)
         if order['type'] == 'R':
+            #print('resize')
             if order['id'] in bids.keys():
                 bids[order['id']]['vol'] -= order['vol']
                 if bids[order['id']]['vol'] <= 0:
@@ -73,42 +80,34 @@ def runOrderBook(lines):
                 if asks[order['id']]['vol'] <= 0 :
                     asks.pop(order['id'])
         if order['type'] == 'B':
+            #print('buy')
             bids[order['id']] = order
             bestBid = max(order['price'],bestBid)
         if order['type'] == 'S':
+            #print('sell')
             asks[order['id']] = order
             bestAsk = min(order['price'],bestAsk)
         if (len(bids.keys()) + len(asks.keys())):
             while bestBid >= bestAsk:
-                #print('offsetting orders !!!')
-                bestBid = max([bids[key]['price'] for key in bids.keys()])
-                bestAsk = min([asks[key]['price'] for key in asks.keys()])
-                allBids = [bids[key] for key in bids.keys()]
-                allAsks = [asks[key] for key in asks.keys()]
-                bestBids = []
-                bestAsks = []
-                for offer in allBids:
-                    if offer['price'] == bestBid:
-                        bestBids.append(offer)
-                for offer in allAsks:
-                    if offer['price'] == bestAsk:
-                        bestAsks.append(offer)
-                firstBidName = min([len(foo['id']) for foo in bestBids])
-                firstAskName = min([len(foo['id']) for foo in bestAsks])
+                #print('oogaooga')
+                sortedBids = listBids([bids[key] for key in bids.keys()])
+                sortedAsks = listAsks([asks[key] for key in asks.keys()])
                 theBestBid = False
                 theBestAsk = False
-                for offer in bestBids:
-                    if offer['id'] == firstBid:
-                        theBestBid = offer
-                for offer in bestAsks:
-                    if offer['id'] == firstAsk:
-                        theBestAsk = offer
+                if len(sortedBids):
+                    theBestBid = sortedBids[0]
+                if len(sortedAsks):
+                    theBestAsk = sortedAsks[0]
                 if (theBestAsk and theBestBid):
                     tradeSize = min(theBestBid['vol'],theBestAsk['vol'])
-                    for iter in ((theBestBid,bids),(theBestAsk,asks)):
-                        iter[0]['vol'] = max(iter[0]['vol']-tradeSize,0)
-                    if iter[0]['vol'] == 0:
-                        iter[1].pop(iter[0]['id'])
+                    theBestBid['vol'] -= tradeSize
+                    theBestAsk['vol'] -= tradeSize
+                    if theBestBid:
+                        if not (theBestBid['vol']):
+                            bids.pop(theBestBid['id'])
+                    if theBestAsk:
+                        if not (theBestAsk['vol']):
+                            asks.pop(theBestAsk['id'])
                     if len(bids.keys()):
                         bestBid = max([bids[key]['price'] for key in bids.keys()])
                     if len(asks.keys()):
@@ -117,7 +116,8 @@ def runOrderBook(lines):
                 bestBid = max([bids[key]['price'] for key in bids.keys()])
             if len(asks.keys()):
                 bestAsk = min([asks[key]['price'] for key in asks.keys()])
-            print(' OrderBook time %d'%(clock,))
+            if (clock > debugStart):
+                print(' OrderBook time %d'%(clock,))
             printOrderBook((bids,asks))
     return (bids,asks)
 
@@ -126,37 +126,11 @@ def printOrderBook(bidsasks):
     bids = copy.deepcopy(bidsasks[0])
     asks = copy.deepcopy(bidsasks[1])
     print('  Printing all bids.')
-    while (len(bids.keys())):
-        bestBid = max([bids[key]['price'] for key in bids.keys()])
-        allBids = [bids[key] for key in bids.keys()]
-        bestBids = []
-        for offer in allBids:
-            if offer['price'] == bestBid:
-                bestBids.append(offer)
-        firstBid = min([foo['id'] for foo in bestBids])
-        theBestBid = False
-        for offer in bestBids:
-            if offer['id'] == firstBid:
-                theBestBid = offer
-        if (theBestBid):
-            print('  %d %d %.2f %s'%(theBestBid['tstamp'],theBestBid['vol'],theBestBid['price'],theBestBid['id']))
-            bids.pop(theBestBid['id'])
+    for order in listBids([bids[key] for key in bids.keys()]):
+        print('  %d %d %.2f %s'%(order['tstamp'],order['vol'],order['price'],order['id']))
     print('  Printing all asks.')
-    while (len(asks.keys())):
-        bestAsk = min([asks[key]['price'] for key in asks.keys()])
-        allAsks = [asks[key] for key in asks.keys()]
-        bestAsks = []
-        for offer in allAsks:
-            if offer['price'] == bestAsk:
-                bestAsks.append(offer)
-        firstAsk = min([foo['id'] for foo in bestAsks])
-        theBestAsk = False
-        for offer in bestAsks:
-            if offer['id'] == firstAsk:
-                theBestAsk = offer
-        if (theBestAsk):
-            print('  %d %d %.2f %s'%(theBestAsk['tstamp'],theBestAsk['vol'],theBestAsk['price'],theBestAsk['id']))
-            asks.pop(theBestAsk['id'])
+    for order in listAsks([asks[key] for key in asks.keys()]):
+        print('  %d %d %.2f %s'%(order['tstamp'],order['vol'],order['price'],order['id']))
 
 def allOrders(startTime=0,endTime=10**20):
     return [lineToOrder(foo) for foo in getLines(startTime=startTime, endTime=endTime)]
