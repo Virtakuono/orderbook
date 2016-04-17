@@ -35,10 +35,6 @@
 #define DEBUGSTART (99999999)
 #endif
 
-int floatToTicks(float f){
-  
-}
-
 int sameFloats(float f1,float f2){
   if((f1-f2)>0.001) return 1;
   if((f2-f1)>0.001) return 1;
@@ -47,7 +43,7 @@ int sameFloats(float f1,float f2){
 
 struct order{
   unsigned int tstamp,size;
-  float price;
+  int price;
   char type, id[MAX_ID_LEN];
   struct order *next, *prev;
 };
@@ -60,7 +56,7 @@ struct book{
 
 int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsigned int * tstamp,char c){
   unsigned int volume=0,ivol=0,count=0;
-  float ep = 0.0;
+  int ep = 0;
   struct order *curr = side[0];
   while(curr){
     if(volume<target[0]){
@@ -76,7 +72,7 @@ int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsig
     ep = 0.0;
   }
   if(sameFloats(ep,old[0])){
-    (sameFloats(ep,0.0))?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+    (sameFloats(ep,0.0))?fprintf(stdout,"%u %c %d.%02d\n",tstamp[0],c,ep/100,ep%100):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
     old[0] = ep;
   }
   return count;
@@ -89,7 +85,7 @@ int updatePrices(struct book *b){
   return rv;
 }
 
-struct order * newOrder(float price,unsigned int size,char type, char * id,unsigned int tstamp){
+struct order * newOrder(int price,unsigned int size,char type, char * id,unsigned int tstamp){
   struct order *rv;
   rv = (struct order *) malloc(sizeof(struct order));
   rv->price = price;
@@ -105,7 +101,7 @@ struct order * newOrder(float price,unsigned int size,char type, char * id,unsig
 int printOrder(FILE *stream,struct order * p){
   fprintf(stream,"-- *** --\nOrder %s\n",p->id);
   fprintf(stream,"Time: %u\n",p->tstamp);
-  fprintf(stream,"Price %f, volume %u\n",p->price,p->size);
+  fprintf(stream,"Price %.2f, volume %u\n",((float) (100*(p->price))),p->size);
   fprintf(stream,"Type %c\n",p->type);
   fprintf(stream,"Previous %p, Next %p\n-- *** --\n",p->prev,p->next);
   return 0;
@@ -145,14 +141,14 @@ struct order * getOrderFromStream(FILE * stream){
     fprintf(stdout,"line: %s ",line);
   }
   char type=0,temp=0;
-  float price=0.0;
+  int p1=0,p2=0;
   unsigned int size=0,tstamp=0;
   struct order *o;
-  if(sscanf(line,"%u %c %s %c %f %u",&tstamp,&temp,id,&type,&price,&size)<6){
+  if(sscanf(line,"%u %c %s %c %d.%d %u",&tstamp,&temp,id,&type,&p1,&p2,&size)<6){
     if(sscanf(line,"%u %c %s %u",&tstamp,&type,id,&size)<4) return 0;
-    o = newOrder(0.0,size,type,id,tstamp);
+    o = newOrder(0,size,type,id,tstamp);
   }
-  o = newOrder(price,size,type,id,tstamp);
+  o = newOrder(p1*100+p2,size,type,id,tstamp);
   free(line);
   free(id);
   return o;
@@ -193,7 +189,7 @@ unsigned int printSide(struct order ** side){
     return count;
   }
   while(curr){
-    fprintf(stdout,"  %u %u %.2f %s\n",curr->tstamp,curr->size,curr->price,curr->id);
+    fprintf(stdout,"  %u %u %.2f %s\n",curr->tstamp,curr->size,((float) 100*(curr->price)),curr->id);
     curr = curr->next;
     count++;
   }
@@ -258,7 +254,7 @@ int checkSideOrdering(struct order ** side){
 int priceSide(struct order * side,unsigned int target){
   unsigned int total=0;
   unsigned int inc;
-  float price=0.0;
+  int price=0;
   while(side->next){
     inc = MIN_ARG(target-total,side->size);
     price += inc*(side->price);
