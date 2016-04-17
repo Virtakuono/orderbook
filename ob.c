@@ -19,33 +19,18 @@
 #define MAX_ID_LEN 8
 #endif
 
+// Set to 1 to match bids into asks
+// like in "real" exchanges
+
 #ifndef ORDER_MATCHING
 #define ORDER_MATCHING 0
 #endif
-
-#ifndef DEBUGSTOP
-#define DEBUGSTOP (99999999)
-#endif
-
-#ifndef PRINTIN
-#define PRINTIN 0
-#endif
-
-#ifndef DEBUGSTART
-#define DEBUGSTART (99999999)
-#endif
-
-int sameFloats(float f1,float f2){
-  if((f1-f2)>0.001) return 1;
-  if((f2-f1)>0.001) return 1;
-  return 0;
-}
 
 struct order{
   unsigned int tstamp,size;
   int price;
   char type, id[MAX_ID_LEN];
-  struct order *next, *prev;
+  struct order *next;
 };
 
 struct book{
@@ -93,7 +78,6 @@ struct order * newOrder(int price,unsigned int size,char type, char * id,unsigne
   rv->type = type;
   rv->tstamp = tstamp;
   rv->next = 0;
-  rv->prev = 0;
   strcpy(rv->id,id);
   return rv;
 }
@@ -103,12 +87,12 @@ int printOrder(FILE *stream,struct order * p){
   fprintf(stream,"Time: %u\n",p->tstamp);
   fprintf(stream,"Price %.2f, volume %u\n",((float) (100*(p->price))),p->size);
   fprintf(stream,"Type %c\n",p->type);
-  fprintf(stream,"Previous %p, Next %p\n-- *** --\n",p->prev,p->next);
+  fprintf(stream,"Next %p\n-- *** --\n",p->next);
   return 0;
 }
 
 int freeOrder(struct order * o){
-  free(o);
+  if(o) free(o);
   return 0;
 }
 
@@ -137,9 +121,7 @@ struct order * getOrderFromStream(FILE * stream){
   line = (char *) calloc(MAX_LINE_LEN,sizeof(char));
   id = (char *) calloc(MAX_ID_LEN,sizeof(char));
   fgets(line,MAX_LINE_LEN,stream);
-  if(PRINTIN){
-    fprintf(stdout,"line: %s ",line);
-  }
+  //fprintf(stdout,"line: %s ",line);
   char type=0,temp=0;
   int p1=0,p2=0;
   unsigned int size=0,tstamp=0;
@@ -345,12 +327,6 @@ int main(int argc, char * argv[]){
     if(q){
       addNewOrder(&theBook,q);
       updatePrices(&theBook);
-      if(theBook.clock>=DEBUGSTART) 
-	printBook(&theBook);
-      if(theBook.clock>=DEBUGSTOP){
-	freeBook(&theBook);
-	return EXIT_SUCCESS;
-      }
     }
   }
   if(argc==3){
