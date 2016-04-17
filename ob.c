@@ -178,8 +178,8 @@ unsigned int printSide(struct order ** side){
   return count;
 }
 
-int compareTwoOffers(struct order * o1,struct order * o2){
-  // Compare two offers, o1 and o2
+int compareTwoOrders(struct order * o1,struct order * o2){
+  // Compare two orders, o1 and o2
   // Returns 1 if the first one is more competitive than the latter
   // Returns -1 if the latter is more competitive
   // Otherwise, returns 0
@@ -223,7 +223,7 @@ int checkSideOrdering(struct order ** side){
   if(!(side[0])) return 0;
   if(!((side[0])->next)) return 0;
   for(struct order * i=side[0];i->next;i=i->next){
-    if(compareTwoOffers(i,i->next)<0){
+    if(compareTwoOrders(i,i->next)<0){
       return 1;
     }
     if(checkOrderType(i)){
@@ -281,7 +281,7 @@ int addNewOrder(struct book * orderBook, struct order * newOrder){
     newOrder->next=0;
     return 0;
   }
-  if(coef*(side[0]->price)<coef*(newOrder->price)){
+  if(!(compareTwoOrders(side[0],newOrder)+1)){
     newOrder->next=side[0];
     side[0]=newOrder;
     return 0;
@@ -292,7 +292,7 @@ int addNewOrder(struct book * orderBook, struct order * newOrder){
       worstBetter->next = newOrder;
       return 0;
     }
-    if(coef*(worstBetter->next->price)<coef*(newOrder->price)){
+    if(!(compareTwoOrders(worstBetter->next,newOrder)+1)){
       newOrder->next = worstBetter->next;
       worstBetter->next = newOrder;
       return 0;
