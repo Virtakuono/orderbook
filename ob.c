@@ -24,16 +24,20 @@
 #endif
 
 #ifndef DEBUGSTOP
-#define DEBUGSTOP (31552032+2)
+#define DEBUGSTOP (99999999)
 #endif
 
 #ifndef PRINTIN
-#define PRINTIN 1
+#define PRINTIN 0
 #endif
 
 #ifndef DEBUGSTART
-#define DEBUGSTART (31552032)
+#define DEBUGSTART (99999999)
 #endif
+
+int floatToTicks(float f){
+  
+}
 
 int sameFloats(float f1,float f2){
   if((f1-f2)>0.001) return 1;
@@ -71,8 +75,8 @@ int updatePricesSide(struct order ** side,float *old,unsigned int * target,unsig
     volume = 0.0;
     ep = 0.0;
   }
-  if(ep!=old[0]){
-    (ep!=0)?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
+  if(sameFloats(ep,old[0])){
+    (sameFloats(ep,0.0))?fprintf(stdout,"%u %c %.2f\n",tstamp[0],c,ep):fprintf(stdout,"%u %c NA\n",tstamp[0],c);
     old[0] = ep;
   }
   return count;

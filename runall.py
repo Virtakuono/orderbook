@@ -16,8 +16,8 @@ for size in sizes:
     f1 = 'pricer.out.%d.txt'%(size,)
     f2 = 'own.%d.out.txt'%(size,)
     f3 = 'diff.%d.txt'%(size,)
-    os.system('diff %s %s > %s'%(size,size,size))
-    diffFile = open('diff.%d.txt'%(size),'r')
+    os.system('diff %s %s > %s'%(f1,f2,f3))
+    diffFile = open(f3,'r')
     diffLines = diffFile.readlines()
     diffFile.close()
     errorLog = []
@@ -31,7 +31,7 @@ for size in sizes:
                     errorLog.append(int(key))
     print('First erroneous time steps (discrepancies between %s and %s )'%(f1,f2))
     for foo in errorLog[:5]:
-        print('Outputs differ for timestamp %d.'%(foo,))
+        print('Outputs differ for timestamp %d'%(foo,))
     print('Doing post-processing')
     ownFile = open('own.%d.out.txt'%size)
     ownLines = ownFile.readlines()
