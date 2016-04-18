@@ -82,15 +82,6 @@ struct order * newOrder(int price,unsigned int size,char type, char * id,unsigne
   return rv;
 }
 
-int printOrder(FILE *stream,struct order * p){
-  fprintf(stream,"-- *** --\nOrder %s\n",p->id);
-  fprintf(stream,"Time: %u\n",p->tstamp);
-  fprintf(stream,"Price %.2f, volume %u\n",((float) (100*(p->price))),p->size);
-  fprintf(stream,"Type %c\n",p->type);
-  fprintf(stream,"Next %p\n-- *** --\n",p->next);
-  return 0;
-}
-
 int freeOrder(struct order * o){
   if(o) free(o);
   return 0;
@@ -115,19 +106,32 @@ unsigned int freeBook(struct book * b){
   return freeSide(&(b->bids))+freeSide(&(b->asks));
 }
 
+struct order * inputError(char *s1, char *s2){
+  fprintf(stderr,"Input error!\n");
+  free(s1);
+  free(s2);
+  return 0;
+}
+
 struct order * getOrderFromStream(FILE * stream){
-  if(feof(stream)) return 0;
   char *line, *id;
   line = (char *) calloc(MAX_LINE_LEN,sizeof(char));
   id = (char *) calloc(MAX_ID_LEN,sizeof(char));
+  if(feof(stream)) return 0;
   fgets(line,MAX_LINE_LEN,stream);
+  if(line[MAX_LINE_LEN-1]||id[MAX_ID_LEN-1]) return inputError(line,id);
+  if(!strlen(line)){
+    free(line);
+    free(id);
+    return 0;
+  }
   //fprintf(stdout,"line: %s ",line);
   char type=0,temp=0;
   int p1=0,p2=0;
   unsigned int size=0,tstamp=0;
   struct order *o;
   if(sscanf(line,"%u %c %s %c %d.%d %u",&tstamp,&temp,id,&type,&p1,&p2,&size)<6){
-    if(sscanf(line,"%u %c %s %u",&tstamp,&type,id,&size)<4) return 0;
+    if(sscanf(line,"%u %c %s %u",&tstamp,&type,id,&size)<4) return inputError(line,id);
     o = newOrder(0,size,type,id,tstamp);
   }
   o = newOrder(p1*100+p2,size,type,id,tstamp);
@@ -164,20 +168,6 @@ int resizeSide(struct order ** side,struct order * newOrder){
   return 1;
 }
 
-unsigned int printSide(struct order ** side){
-  struct order * curr = side[0];
-  unsigned int count = 0;
-  if(!curr){
-    return count;
-  }
-  while(curr){
-    fprintf(stdout,"  %u %u %.2f %s\n",curr->tstamp,curr->size,((float) 100*(curr->price)),curr->id);
-    curr = curr->next;
-    count++;
-  }
-  return count;
-}
-
 int compareTwoOrders(struct order * o1,struct order * o2){
   // Compare two orders, o1 and o2
   // Returns 1 if the first one is more competitive than the latter
@@ -189,47 +179,6 @@ int compareTwoOrders(struct order * o1,struct order * o2){
   if(coef*(o1->price)<coef*(o2->price)) return -1;
   if((o1->tstamp)<(o2->tstamp)) return 1;
   if((o1->tstamp)>(o2->tstamp)) return -1;
-  return 0;
-}
-
-int checkOrderType(struct order * o){
-  if(o->type=='B') return 0;
-  if(o->type=='S') return 0;
-  return 1;
-}
-
-int printBook(struct book * b){
-  fprintf(stdout,"OrderBook time %u\n Printing order book\n",b->clock);
-  fprintf(stdout,"  Printing all bids.\n");
-  printSide(&(b->bids));
-  fprintf(stdout,"  Printing all asks.\n");
-  printSide(&(b->asks));
-  return 0;
-}
-
-int checkRidiculousOrderSizes(struct order ** side){
-  unsigned int comp = 0;
-  comp--;
-  comp/=2;
-  if(!(side[0])) return 0;
-  if(!((side[0])->next)) return 0;
-  for(struct order * i=side[0];i->next;i=i->next){
-    if(i->size>comp) return 1;
-  }
-  return 0;
-}
-
-int checkSideOrdering(struct order ** side){
-  if(!(side[0])) return 0;
-  if(!((side[0])->next)) return 0;
-  for(struct order * i=side[0];i->next;i=i->next){
-    if(compareTwoOrders(i,i->next)<0){
-      return 1;
-    }
-    if(checkOrderType(i)){
-      return 1;
-    }
-  }
   return 0;
 }
 
