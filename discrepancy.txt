@@ -1,0 +1,16 @@
+Files referred to:
+pricer.out.1.txt (from pricer.1.gz at http://www.rgmadvisors.com/problems/orderbook/pricer.out.1.gz)
+pricer.in.txt (from pricer.in.gz at http://www.rgmadvisors.com/problems/orderbook/pricer.in.gz)
+index.html (at http://www.rgmadvisors.com/problems/orderbook/index.html)
+
+Bug description:
+1. At time 31848961 the best ask in the order book is 44.01. (pricer.out.1.txt:487). The best bid in the order book is 43.95 (pricer.out:486).
+2. Order "vgc" comes in at time 31848961 (pricer.in.txt:3036). The price of the ask order is 43.98 so it is better (lower) than any existing ask but higher than the best ask price in the existing order book. Order "vgc" has no matching offers in the book so it is added to the book in its entirety. Reference software prints "31848961 B 43.98" (pricer.out.1.txt:487).
+3. At time 31849076 order "ugc" is resized by 100 units. (pricer.in.txt:3037) and thus removed from the order book.
+4. At time 31849106 order "wgc" comes in. (pricer.in.txt:3038) This ask has higher price than the existing best ask so it is added to the book without output.
+5. At time 31854157 order "xgc" comes in. (pricer.in.txt:3039). Order "xgc" is a buy order whose price matches the existing best ask which is order "vgc". (pricer.out.1.txt:487, pricer.in.txt:3036). These orders are matched through the procedure described in the Problem description (index.html:45-51).
+6. The volume of "xgc" is 100 units, whereas the volume of "vgc" is 50 units. As a result the first 50 units of "xgc" are matched to "vgc" and "vgc" is filled.
+7. The remaining 50 units of "xgc" need to be matched to either to the best ask after "vgc" or added to the book. At least some of the remaining 50 units of "xgc" are added as the new best bid into the order book and the reference solution prints out "31854157 S 43.98" (pricer.out.1.txt:488).
+8. The reference solution does not print out a line "31854157 B xx.xx", but the next output is "31858774 S 43.95" (pricer.out.1.txt:488). In fact, the best ask price in the order book is 43.98 for the time span of from 31848961 to 31859250 (pricer.out.1.txt:486-491).
+
+Conclusion: In the time span from 31848961 to 31859250 the best (lowest) ask price in the order book is 43.98, however, in the time span 31854157 to 31858774 the best (highest) bid price is 43.98 too. This would imply that in this instance, the reference solution order book is in a forbidden state for over four and a half seconds. If there were existing orders on both sides of the order book at price 43.98, these orders should be matched until there is a bid-ask spread of at least the size of the tick.

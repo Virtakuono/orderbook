@@ -90,9 +90,7 @@ int freeOrder(struct order * o){
 unsigned int freeSide(struct order **side){
   struct order *curr = side[0], *temp=0;
   unsigned int count = 0;
-  if(!curr){
-    return count;
-  }
+  if(!curr) return count;
   while(curr){
     temp = curr->next;
     freeOrder(curr);
@@ -199,8 +197,7 @@ int priceSide(struct order * side,unsigned int target){
 int addNewOrder(struct book * orderBook, struct order * newOrder){
   orderBook->clock = newOrder->tstamp;
   if(newOrder->type=='R'){
-    resizeSide(&(orderBook->asks),newOrder);
-    resizeSide(&(orderBook->bids),newOrder);
+    if(resizeSide(&(orderBook->asks),newOrder)) resizeSide(&(orderBook->bids),newOrder);
     freeOrder(newOrder);
     return 0;
   }
